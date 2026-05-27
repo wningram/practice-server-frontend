@@ -1,23 +1,60 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
-  const [numberArray, setNumberArray] = useState('')
-  const [singleNumber, setSingleNumber] = useState('')
+  const [dataArrayStr, setDataArrayStr] = useState('')
+  const [queryNumber, setQueryNumber] = useState('')
 
-  const parsedNumbers = numberArray
+  const binary_search_path = '/api/searching/binary'
+
+  const parsedNumbers = dataArrayStr
     .split(/[\s,]+/)
     .filter(Boolean)
     .map((value) => Number(value))
 
+  const getQueryIndexResponse = async (data) => {
+    const response = await fetch(binary_search_path, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch query index')
+    }
+    
+    return response
+  }
+
   const handleSubmit = () => {
-    window.alert(
-      `Submitted array: ${parsedNumbers.length ? parsedNumbers.join(', ') : 'none'}\nSubmitted number: ${singleNumber || 'none'}`
-    )
+    if (dataArrayStr.trim() === '') {
+      window.alert('Please enter at least one number in the array.')
+      return
+    }
+
+    if (queryNumber === '') {
+      window.alert('Please enter a single number to search for.')
+      return
+    }
+
+    const data = {
+      data: dataArrayStr,
+      query: parseInt(queryNumber)
+    }
+
+    getQueryIndexResponse(data)
+      .then((response) => response.json())
+      .then((queryIndexResponse) => {
+        window.alert(
+          `Server response for query index:\n\n${JSON.stringify(queryIndexResponse, null, 2)}`
+        )
+      })
+      .catch((error) => {
+        console.error('Error fetching query index:', error)
+        window.alert('An error occurred while fetching the query index. Please check the console for details.')
+      })
   }
 
   return (
@@ -31,8 +68,8 @@ function App() {
             <label htmlFor="array-input">Array of numbers</label>
             <textarea
               id="array-input"
-              value={numberArray}
-              onChange={(event) => setNumberArray(event.target.value)}
+              value={dataArrayStr}
+              onChange={(event) => setDataArrayStr(event.target.value)}
               placeholder="e.g. 3, 8, 15, 42"
               rows="4"
             />
@@ -43,8 +80,8 @@ function App() {
             <input
               id="single-input"
               type="number"
-              value={singleNumber}
-              onChange={(event) => setSingleNumber(event.target.value)}
+              value={queryNumber}
+              onChange={(event) => setQueryNumber(event.target.value)}
               placeholder="e.g. 7"
             />
           </div>
@@ -62,7 +99,7 @@ function App() {
 
           <div className="form-row summary">
             <strong>Single value:</strong>
-            <span>{singleNumber || 'No value entered yet'}</span>
+            <span>{queryNumber || 'No value entered yet'}</span>
           </div>
         </div>
       </section>
